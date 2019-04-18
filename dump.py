@@ -5,6 +5,7 @@
 # blog: www.alonemonkey.com
 
 import sys
+sys.path.append('/usr/local/lib/python2.7/site-packages')
 import codecs
 import frida
 import threading
@@ -42,7 +43,7 @@ file_dict = {}
 finished = threading.Event()
 
 
-def get_usb_iphone():
+def get_usb_iphone(device_id):
     Type = 'usb'
     if int(frida.__version__.split('.')[0]) < 12:
         Type = 'tether'
@@ -57,7 +58,7 @@ def get_usb_iphone():
 
     device = None
     while device is None:
-        devices = [dev for dev in device_manager.enumerate_devices() if dev.type == Type]
+        devices = [dev for dev in device_manager.enumerate_devices() if dev.type == Type and dev.id == device_id]
         if len(devices) == 0:
             print 'Waiting for USB device...'
             changed.wait()
@@ -287,13 +288,14 @@ def start_dump(session, ipa_name):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='frida-ios-dump (by AloneMonkey v2.0)')
     parser.add_argument('-l', '--list', dest='list_applications', action='store_true', help='List the installed apps')
+    parser.add_argument('--device', nargs='?', help='device id (prefix)')
     parser.add_argument('-o', '--output', dest='output_ipa', help='Specify name of the decrypted IPA')
     parser.add_argument('target', nargs='?', help='Bundle identifier or display name of the target app')
     args = parser.parse_args()
 
     exit_code = 0
     ssh = None
-    device = get_usb_iphone()
+    device = get_usb_iphone(args.device)
 
     if len(sys.argv[1:]) == 0:
         parser.print_help()
